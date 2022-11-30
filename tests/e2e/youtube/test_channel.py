@@ -1,4 +1,6 @@
 import pytest
+from mergedeep import mergedeep
+
 from expected_download import assert_expected_downloads
 from expected_transaction_log import assert_transaction_log_matches
 
@@ -65,3 +67,56 @@ class TestChannel:
             dry_run=dry_run,
             expected_download_summary_file_name="youtube/test_channel_full.json",
         )
+
+    def test_full_channel_download_with_download_index_ep_ordering(
+        self,
+        channel_as_tv_show_config,
+        channel_preset_dict,
+        output_directory,
+    ):
+        channel_preset_dict = dict(channel_preset_dict, **{
+            "preset": [
+                "tv_show",
+                "season_by_year__episode_by_download_index"
+            ],
+            "date_range": {
+                "before": "20150101"
+            }
+        })
+
+        full_channel_subscription = Subscription.from_dict(
+            config=channel_as_tv_show_config, preset_name="pz", preset_dict=channel_preset_dict
+        )
+        transaction_log = full_channel_subscription.download(dry_run=False)
+        assert_transaction_log_matches(
+            output_directory=output_directory,
+            transaction_log=transaction_log,
+            transaction_log_summary_file_name="youtube/test_channel_w_download_index_0.txt",
+        )
+        assert_expected_downloads(
+            output_directory=output_directory,
+            dry_run=False,
+            expected_download_summary_file_name="youtube/test_channel_w_download_index_0.json",
+        )
+
+        channel_preset_dict = dict(channel_preset_dict, **{
+            "date_range": {
+                "before": "20990101"
+            }
+        })
+        full_channel_subscription = Subscription.from_dict(
+            config=channel_as_tv_show_config, preset_name="pz", preset_dict=channel_preset_dict
+        )
+
+        transaction_log = full_channel_subscription.download(dry_run=False)
+        assert_transaction_log_matches(
+            output_directory=output_directory,
+            transaction_log=transaction_log,
+            transaction_log_summary_file_name="youtube/test_channel_w_download_index_1.txt",
+        )
+        assert_expected_downloads(
+            output_directory=output_directory,
+            dry_run=False,
+            expected_download_summary_file_name="youtube/test_channel_w_download_index_1.json",
+        )
+
